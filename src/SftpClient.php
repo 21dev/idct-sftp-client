@@ -446,15 +446,10 @@ class SftpClient
             throw new Exception("Unable to open local file for writing: $savePath");
         }
 
-        // Write from our remote stream to our local stream
-        $read = 0;
         $fileSize = filesize("ssh2.sftp://".$sftp_int."/$remoteFilePath");
-        while ($read < $fileSize && ($buffer = fread($remoteStream, $fileSize - $read))) {
-            // Increase our bytes read
-            $read += strlen($buffer);
 
-            // Write to our local file
-            if (fwrite($localStream, $buffer) === false) {
+        while (!feof($remoteStream)) {
+            if (fwrite($localStream, fread($remoteStream, 8192)) === false) {
                 throw new Exception("Unable to write to local file: $savePath");
             }
         }
@@ -464,7 +459,7 @@ class SftpClient
         fclose($remoteStream);
 
         if ($this->fileSizeVerificationEnabled && $fileSize !== filesize($savePath)) {
-            throw new Exception("Different file size: " . $localFilePath);
+            throw new Exception("Different file size: " . $localFileName);
         }
 
         return $this;
